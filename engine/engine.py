@@ -1,4 +1,4 @@
-from engine.data_interfaces import SquareBuild, TransportNetworkWorkload, WorkloadOnStation
+from engine.data_interfaces import ConstructionAreas, TransportNetwork, Station, RegionParams
 from numpy import array
 from scipy.special import softmax
 
@@ -6,16 +6,16 @@ from scipy.special import softmax
 class Engine:
     def recalc_all_traffic(
             self,
-            construction_areas: list[SquareBuild],
-            all_public_transport_stations: list[WorkloadOnStation],
-            all_roads_traffic: list[TransportNetworkWorkload],
-            roads_location: list[int],
-            region_params: (int, int, int, int, int, int)
+            construction_areas: list[ConstructionAreas],
+            all_public_transport_stations: list[Station],
+            all_roads_traffic: list[TransportNetwork],
+            roads_location: list[float],
+            region_params: RegionParams
     ) -> (list, list):
 
         new_people = self._calc_new_people(construction_areas)
         new_road_traffic_count, new_public_transport_traffic_count = \
-            self._implement_region_params(new_people, *region_params)
+            self._implement_region_params(new_people, *region_params.params)
 
         public_transport_statistics = \
             self._calc_public_traffic(new_public_transport_traffic_count, all_public_transport_stations)
@@ -25,8 +25,8 @@ class Engine:
 
     @staticmethod
     def _calc_new_people(
-            construction_areas: list[SquareBuild]
-    ) -> (int, int):
+            construction_areas: list[ConstructionAreas]
+    ) -> (float, float):
         new_living_people = 0
         new_working_people = 0
         for construction_area in construction_areas:
@@ -37,14 +37,14 @@ class Engine:
 
     @staticmethod
     def _implement_region_params(
-            new_people: (int, int),
-            percent_of_working_people: int,
-            public_transport_usage: int,
-            traffic_to_center: int,
-            personal_transport_passenger_rate: int,
-            road_percent_living_load: int,
-            road_percent_working_load: int
-    ) -> (int, int):
+            new_people: (float, float),
+            percent_of_working_people: float,
+            public_transport_usage: float,
+            traffic_to_center: float,
+            personal_transport_passenger_rate: float,
+            road_percent_living_load: float,
+            road_percent_working_load: float
+    ) -> (float, float):
         new_living_people, new_working_people = new_people
         new_living_working_people = new_living_people * percent_of_working_people
 
@@ -67,8 +67,8 @@ class Engine:
 
     def _calc_public_traffic(
             self,
-            new_public_transport_traffic: int,
-            all_public_transport_stations: list[WorkloadOnStation]
+            new_public_transport_traffic: float,
+            all_public_transport_stations: list[Station]
     ) -> (list, list):
         morning_public_transport_statistics = []
         morning_public_traffic_percentage = self._get_morning_public_traffic_percentage(all_public_transport_stations)
@@ -94,8 +94,8 @@ class Engine:
 
     @staticmethod
     def _get_morning_public_traffic_percentage(
-            stations: list[WorkloadOnStation]
-    ) -> list[int]:
+            stations: list[Station]
+    ) -> list[float]:
         public_traffic_percentage_passengerflow = []
         all_passengerflow = sum(map(lambda x: x.passengerflow_morning, stations))
         for station in stations:
@@ -105,8 +105,8 @@ class Engine:
 
     @staticmethod
     def _get_evening_public_traffic_percentage(
-            stations: list[WorkloadOnStation]
-    ) -> list[int]:
+            stations: list[Station]
+    ) -> list[float]:
         public_traffic_percentage_passengerflow = []
         all_passengerflow = sum(map(lambda x: x.passengerflow_evening, stations))
         for station in stations:
@@ -116,17 +116,17 @@ class Engine:
 
     @staticmethod
     def _calc_station_traffic(
-            old_traffic: int,
-            new_area_traffic: int
-    ) -> int:
+            old_traffic: float,
+            new_area_traffic: float
+    ) -> float:
         new_traffic = old_traffic + new_area_traffic
         return new_traffic
 
     @staticmethod
     def _make_morning_statistics(
-            station: WorkloadOnStation,
-            new_morning_traffic: int
-    ) -> list[int, int, int]:
+            station: Station,
+            new_morning_traffic: float
+    ) -> list[float, float, float]:
         traffic_increase = new_morning_traffic - station.passengerflow_morning
         traffic_percentage = station.passengerflow_morning / station.capacity
         new_traffic_percentage = (traffic_increase + station.passengerflow_morning) / station.capacity
@@ -135,9 +135,9 @@ class Engine:
 
     @staticmethod
     def _make_evening_statistics(
-            station: WorkloadOnStation,
-            new_evening_traffic: int
-    ) -> list[int, int, int]:
+            station: Station,
+            new_evening_traffic: float
+    ) -> list[float, float, float]:
 
         traffic_increase = new_evening_traffic - station.passengerflow_evening
         traffic_percentage = station.passengerflow_evening / station.capacity
@@ -148,9 +148,9 @@ class Engine:
 
     def _calc_roads_traffic(
             self,
-            new_road_transport_traffic: int,
-            all_roads: list[TransportNetworkWorkload],
-            roads_location: list[int]
+            new_road_transport_traffic: float,
+            all_roads: list[TransportNetwork],
+            roads_location: list[float]
     ) -> list:
         roads_traffic_statistics = []
         roads_traffic_percentage = self._get_road_traffic_percentage(all_roads, roads_location)
@@ -164,8 +164,8 @@ class Engine:
 
     def _get_road_traffic_percentage(
             self,
-            roads: list[TransportNetworkWorkload],
-            roads_location: list[int]
+            roads: list[TransportNetwork],
+            roads_location: list[float]
     ) -> list:
         roads_location_softmax = self._softmax_calibration(roads_location)
 
@@ -182,8 +182,8 @@ class Engine:
 
     @staticmethod
     def _softmax_calibration(
-            roads_location: list[int]
-    ) -> list[int]:
+            roads_location: list[float]
+    ) -> list[float]:
         roads_location = list(map(lambda x: 1/x, roads_location))
         roads_location = array(roads_location)
         roads_location_softmax = softmax(roads_location).tolist()
@@ -191,17 +191,17 @@ class Engine:
 
     @staticmethod
     def _calc_road_traffic(
-            old_traffic: int,
-            new_area_traffic: int
-    ) -> int:
+            old_traffic: float,
+            new_area_traffic: float
+    ) -> float:
         new_traffic = old_traffic + new_area_traffic
         return new_traffic
 
     @staticmethod
     def _make_road_traffic_statistics(
-            road: TransportNetworkWorkload,
-            new_road_traffic: int
-    ) -> list[int, int, int]:
+            road: TransportNetwork,
+            new_road_traffic: float
+    ) -> list[float, float, float]:
         traffic_increase = new_road_traffic - road.transport_in_hour
         traffic_rush_hour = round(road.transport_in_hour / road.max_load, 1) * 10
         new_traffic_rush_hour = round((traffic_increase + road.transport_in_hour) / road.max_load, 1) * 10

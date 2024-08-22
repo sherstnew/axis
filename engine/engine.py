@@ -7,65 +7,90 @@ class Engine:
             construction_areas: list[SquareBuild],
             all_public_transport_stations: list[WorkloadOnStation],
             all_roads_traffic: list[TransportNetworkWorkload],
-            region_params: (int, int, int, int)
+            region_params: (int, int, int, int, int, int)
     ) -> (list, list):
+
         new_people = self._calc_new_people(construction_areas)
         new_road_traffic_count, new_public_transport_traffic_count = \
             self._implement_region_params(new_people, *region_params)
+        print(new_road_traffic_count)
+
         public_transport_statistics = \
-            self.calc_public_traffic(new_public_transport_traffic_count, all_public_transport_stations)
-        roads_traffic_statistics = self.calc_roads_traffic(new_road_traffic_count, all_roads_traffic)
+            self._calc_public_traffic(new_public_transport_traffic_count, all_public_transport_stations)
+        roads_traffic_statistics = self._calc_roads_traffic(new_road_traffic_count, all_roads_traffic)
+
         return public_transport_statistics, roads_traffic_statistics
 
     @staticmethod
     def _calc_new_people(
             construction_areas: list[SquareBuild]
-    ) -> int:
-        new_people = 0
+    ) -> (int, int):
+        new_living_people = 0
+        new_working_people = 0
         for construction_area in construction_areas:
-            new_people += construction_area.apartments / 25
-            new_people += construction_area.block_of_flats / 45
-            new_people += construction_area.no_living_square / 35
-        return new_people
+            new_living_people += construction_area.apartments / 25
+            new_living_people += construction_area.block_of_flats / 45
+            new_working_people += construction_area.no_living_square / 35
+        return new_living_people, new_working_people
 
     @staticmethod
     def _implement_region_params(
-            new_people: int,
+            new_people: (int, int),
             percent_of_working_people: int,
             public_transport_usage: int,
             traffic_to_center: int,
-            personal_transport_passenger_rate: int
+            personal_transport_passenger_rate: int,
+            road_percent_living_load: int,
+            road_percent_working_load: int
     ) -> (int, int):
-        working_people = new_people * percent_of_working_people
-        personal_transport_usage = 1 - public_transport_usage
-        max_road_traffic = max(1 - traffic_to_center, traffic_to_center)
-        road_traffic_count = working_people * \
-                             personal_transport_usage / personal_transport_passenger_rate * max_road_traffic
-        public_transport_traffic_count = working_people * public_transport_usage
-        return road_traffic_count, public_transport_traffic_count
+        new_living_people, new_working_people = new_people
+        new_living_working_people = new_living_people * percent_of_working_people
 
-    def calc_public_traffic(
+        new_living_working_people_on_public_transport = new_living_working_people * public_transport_usage * \
+                                                        road_percent_living_load
+        new_work_working_people_on_public_transport = new_working_people * public_transport_usage * \
+                                                      road_percent_working_load
+
+        max_road_traffic = max(1 - traffic_to_center, traffic_to_center)
+        roads_usage = 1 - public_transport_usage
+        new_living_working_people_on_roads = new_living_working_people * roads_usage * road_percent_living_load
+        new_work_working_people_on_roads = new_working_people * roads_usage * road_percent_working_load
+
+        new_people_on_roads = (new_living_working_people_on_roads + new_work_working_people_on_roads) / \
+                              personal_transport_passenger_rate * max_road_traffic
+        new_people_on_public_transport = new_living_working_people_on_public_transport + \
+                                         new_work_working_people_on_public_transport
+
+        return new_people_on_roads, new_people_on_public_transport / 1000
+
+    def _calc_public_traffic(
             self,
             new_public_transport_traffic: int,
             all_public_transport_stations: list[WorkloadOnStation]
     ) -> (list, list):
         morning_public_transport_statistics = []
         morning_public_traffic_percentage = self._get_morning_public_traffic_percentage(all_public_transport_stations)
-        for station, morning_percentage in all_public_transport_stations, morning_public_traffic_percentage:
+        for i in range(len(morning_public_traffic_percentage)):
+            station, morning_percentage = all_public_transport_stations[i], morning_public_traffic_percentage[i]
             new_morning_traffic = \
-                self._calc_station_traffic(station.passengerflow, new_public_transport_traffic * morning_percentage)
+                self._calc_station_traffic(station.passengerflow_morning, new_public_transport_traffic *
+                                           morning_percentage)
             morning_public_traffic_statistics = self._make_morning_statistics(station, new_morning_traffic)
             morning_public_transport_statistics.append(morning_public_traffic_statistics)
+        morning_public_transport_statistics.reverse()
 
         evening_public_transport_statistics = []
-        evening_public_traffic_percentage = self._get_evening_public_traffic_percentage(station)
-        for station, evening_percentage in all_public_transport_stations, evening_public_traffic_percentage:
+        evening_public_traffic_percentage = self._get_evening_public_traffic_percentage(all_public_transport_stations)
+        for i in range(len(evening_public_traffic_percentage)):
+            station, evening_percentage = all_public_transport_stations[i], evening_public_traffic_percentage[i]
             new_evening_traffic = \
-                self._calc_station_traffic(station.passengerflow, new_public_transport_traffic * evening_percentage)
+                self._calc_station_traffic(station.passengerflow_evening, new_public_transport_traffic *
+                                           evening_percentage)
             evening_public_traffic_statistics = self._make_evening_statistics(station, new_evening_traffic)
             evening_public_transport_statistics.append(evening_public_traffic_statistics)
+        evening_public_transport_statistics.reverse()
 
-        return morning_public_traffic_statistics, evening_public_traffic_statistics
+        return morning_public_transport_statistics, evening_public_transport_statistics
 
     @staticmethod
     def _get_morning_public_traffic_percentage(
@@ -113,23 +138,27 @@ class Engine:
             station: WorkloadOnStation,
             new_evening_traffic: int
     ) -> list[int, int, int]:
+
         traffic_increase = new_evening_traffic - station.passengerflow_evening
         traffic_percentage = station.passengerflow_evening / station.capacity
         new_traffic_percentage = (traffic_increase + station.passengerflow_evening) / station.capacity
         traffic_percentage_increase = new_traffic_percentage - traffic_percentage
+
         return [traffic_increase, new_traffic_percentage, traffic_percentage_increase]
 
-    def calc_roads_traffic(
+    def _calc_roads_traffic(
             self,
             new_road_transport_traffic: int,
             all_roads: list[TransportNetworkWorkload]
     ) -> list:
         roads_traffic_statistics = []
         roads_traffic_percentage = self._get_road_traffic_percentage(all_roads)
-        for road, percentage in all_roads, roads_traffic_percentage:
+        for i in range(len(roads_traffic_percentage)):
+            road, percentage = all_roads[i], roads_traffic_percentage[i]
             new_road_traffic = self._calc_road_traffic(road.transport_in_hour, new_road_transport_traffic * percentage)
             roads_traffic_statistic = self._make_road_traffic_statistics(road, new_road_traffic)
             roads_traffic_statistics.append(roads_traffic_statistic)
+        roads_traffic_statistics.reverse()
 
         return roads_traffic_statistics
 
@@ -137,12 +166,12 @@ class Engine:
     def _get_road_traffic_percentage(
             roads: list[TransportNetworkWorkload]
     ) -> list:
-        roads_traffic_percentage = []
-        all_roads_traffic = sum(map(lambda x: x.transport_in_hour, roads))
+        public_traffic_percentage_passengerflow = []
+        all_passengerflow = sum(map(lambda x: x.transport_in_hour, roads))
         for road in roads:
-            percentage = road.transport_in_hour / all_roads_traffic
-            roads_traffic_percentage.append(percentage)
-        return roads_traffic_percentage
+            percentage = road.transport_in_hour / all_passengerflow
+            public_traffic_percentage_passengerflow.append(percentage)
+        return public_traffic_percentage_passengerflow
 
     @staticmethod
     def _calc_road_traffic(

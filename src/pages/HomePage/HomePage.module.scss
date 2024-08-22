@@ -45,6 +45,8 @@
 .inputs {
   width: 40%;
   display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
   flex-wrap: wrap;
   gap: 20px;
 }
@@ -64,4 +66,42 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.balloon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+}
+
+.input {
+  width: 100%;
+  font-family: inherit;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  padding: 10px;
+}
+
+.balloon_header {
+  font-size: 18px;
+}
+
+.balloon_btn {
+  font-family: inherit;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.streets {
+  width: 40%;
+  display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
 }

@@ -1,4 +1,6 @@
 from engine.data_interfaces import SquareBuild, TransportNetworkWorkload, WorkloadOnStation
+from numpy import array
+from scipy.special import softmax
 
 
 class Engine:
@@ -7,17 +9,17 @@ class Engine:
             construction_areas: list[SquareBuild],
             all_public_transport_stations: list[WorkloadOnStation],
             all_roads_traffic: list[TransportNetworkWorkload],
+            roads_location: list[int],
             region_params: (int, int, int, int, int, int)
     ) -> (list, list):
 
         new_people = self._calc_new_people(construction_areas)
         new_road_traffic_count, new_public_transport_traffic_count = \
             self._implement_region_params(new_people, *region_params)
-        print(new_road_traffic_count)
 
         public_transport_statistics = \
             self._calc_public_traffic(new_public_transport_traffic_count, all_public_transport_stations)
-        roads_traffic_statistics = self._calc_roads_traffic(new_road_traffic_count, all_roads_traffic)
+        roads_traffic_statistics = self._calc_roads_traffic(new_road_traffic_count, all_roads_traffic, roads_location)
 
         return public_transport_statistics, roads_traffic_statistics
 
@@ -77,7 +79,6 @@ class Engine:
                                            morning_percentage)
             morning_public_traffic_statistics = self._make_morning_statistics(station, new_morning_traffic)
             morning_public_transport_statistics.append(morning_public_traffic_statistics)
-        morning_public_transport_statistics.reverse()
 
         evening_public_transport_statistics = []
         evening_public_traffic_percentage = self._get_evening_public_traffic_percentage(all_public_transport_stations)
@@ -88,7 +89,6 @@ class Engine:
                                            evening_percentage)
             evening_public_traffic_statistics = self._make_evening_statistics(station, new_evening_traffic)
             evening_public_transport_statistics.append(evening_public_traffic_statistics)
-        evening_public_transport_statistics.reverse()
 
         return morning_public_transport_statistics, evening_public_transport_statistics
 
@@ -149,29 +149,45 @@ class Engine:
     def _calc_roads_traffic(
             self,
             new_road_transport_traffic: int,
-            all_roads: list[TransportNetworkWorkload]
+            all_roads: list[TransportNetworkWorkload],
+            roads_location: list[int]
     ) -> list:
         roads_traffic_statistics = []
-        roads_traffic_percentage = self._get_road_traffic_percentage(all_roads)
+        roads_traffic_percentage = self._get_road_traffic_percentage(all_roads, roads_location)
         for i in range(len(roads_traffic_percentage)):
             road, percentage = all_roads[i], roads_traffic_percentage[i]
             new_road_traffic = self._calc_road_traffic(road.transport_in_hour, new_road_transport_traffic * percentage)
             roads_traffic_statistic = self._make_road_traffic_statistics(road, new_road_traffic)
             roads_traffic_statistics.append(roads_traffic_statistic)
-        roads_traffic_statistics.reverse()
 
         return roads_traffic_statistics
 
-    @staticmethod
     def _get_road_traffic_percentage(
-            roads: list[TransportNetworkWorkload]
+            self,
+            roads: list[TransportNetworkWorkload],
+            roads_location: list[int]
     ) -> list:
-        public_traffic_percentage_passengerflow = []
+        roads_location_softmax = self._softmax_calibration(roads_location)
+
+        roads_traffic_percentage_passengerflow = []
         all_passengerflow = sum(map(lambda x: x.transport_in_hour, roads))
         for road in roads:
             percentage = road.transport_in_hour / all_passengerflow
-            public_traffic_percentage_passengerflow.append(percentage)
-        return public_traffic_percentage_passengerflow
+            roads_traffic_percentage_passengerflow.append(percentage)
+        roads_traffic_percentage_passengerflow = list(map(lambda x: x * 0.6, roads_traffic_percentage_passengerflow))
+        roads_location_softmax = list(map(lambda x: x * 0.4, roads_location_softmax))
+        for i in range(len(roads_location_softmax)):
+            roads_traffic_percentage_passengerflow[i] += roads_location_softmax[i]
+        return roads_traffic_percentage_passengerflow
+
+    @staticmethod
+    def _softmax_calibration(
+            roads_location: list[int]
+    ) -> list[int]:
+        roads_location = list(map(lambda x: 1/x, roads_location))
+        roads_location = array(roads_location)
+        roads_location_softmax = softmax(roads_location).tolist()
+        return roads_location_softmax
 
     @staticmethod
     def _calc_road_traffic(

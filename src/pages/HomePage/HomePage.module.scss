@@ -1,9 +1,67 @@
+.location {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
 .map_wrapper {
-  width: 50%;
-  height: 400px;
+  width: 100%;
+  height: 500px;
   border-radius: 15px;
 }
+
 .map {
   width: 100%;
-  height: 400px;
+  height: 100%;
+}
+
+.points {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.point {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 200px;
+}
+
+.points_header {
+  font-size: 24px;
+  width: 100%;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  width: 100%;
+}
+
+.inputs {
+  width: 40%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.inputs_header {
+  width: 100%;
+  font-size: 24px;
+}
+
+.inputs_subheader {
+  width: 100%;
+  font-size: 20px;
+}
+
+.block {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }

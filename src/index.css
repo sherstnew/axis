@@ -11,3 +11,7 @@ body {
   align-items: flex-start;
   flex-wrap: wrap;
 }
+
+.ymaps-2-1-79-map ymaps:nth-child(1) {
+  border-radius: 15px !important;
+}

@@ -1,10 +1,12 @@
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
-def kb_start() -> ReplyKeyboardMarkup:
+def make_keyboard_row(data) -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
-    kb.button(text="Да")
-    kb.button(text="Нет")
+
+    for i in data:
+        kb.add(KeyboardButton(text=i))
+
     kb.adjust(2)
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)

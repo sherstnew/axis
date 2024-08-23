@@ -1,17 +1,21 @@
 from engine.engine import Engine
-from data.models import SquareBuild, TransportNetworkWorkload, WorkloadOnStation
+from data.models import SquareBuild
+from engine.data_interfaces import ConstructionAreas, Station, TransportNetwork, RegionParams
 
 
+async def analytics(sqbuild: SquareBuild):
+    engine = Engine()
 
-async def analytics(road_location):
-    engine = Engine()   
-    response_data_SquareBuild = await SquareBuild.find_all().to_list() 
-    response_data_TransportNetworkWorkload = await TransportNetworkWorkload.find_all().to_list()
-    response_data_WorkloadOnStation = await WorkloadOnStation.find_all().to_list()
-    
-    
-    # response_data_RegionParams = await RegionParams.find_all().to_list()
-    
+    return engine.recalc_all_traffic(
+        construction_areas=[ConstructionAreas(
+            no_living_square=sqbuild.no_living_square, apartments=sqbuild.apartments, block_of_flats=sqbuild.block_of_flats)],
+
+        all_public_transport_stations=list(map(lambda x: Station(
+            passengerflow_evening=x.passengerflow_evening, passengerflow_morning=x.passengerflow_mornind, capacity=x.capacity), sqbuild.neeres_stations)),
+
+        all_roads_traffic=list(map(lambda x: TransportNetwork(
+            transport_in_hour=x.transport_in_hour, rush_hour=x.rush_hour, max_load=x.max_load), sqbuild.roads)),
+
+        roads_location=sqbuild.road_location,
         
-    engine.recalc_all_traffic([response_data_SquareBuild], [response_data_TransportNetworkWorkload], [response_data_WorkloadOnStation], [road_location], (0.57, 0.70, 0.8, 1.2, 0.1, 0.35))
- 
+        region_params=RegionParams(0.57, 0.70, 0.8, 1.2, 0.1, 0.35))

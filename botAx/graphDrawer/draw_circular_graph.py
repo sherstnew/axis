@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+import requests
 
 
 def draw_circular_graph():
-    # Запрос Ане
+    response = requests.get('http://172.16.18.126:8000/using_of_week').json()
+
     data = np.array([1, 2, 6, 9, 4, 3, 12])
 
     plt.clf()

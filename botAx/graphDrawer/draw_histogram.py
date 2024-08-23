@@ -1,11 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+import requests
+
 
 
 def draw_histogram():
-    # Запрос Ане
-    data = np.array([1, 2, 6, 0, 4, 3, 12])
+    response = requests.get('http://172.16.18.126:8000/using_of_week').json()
+
+    data = np.array([1, 2, 6, 9, 4, 3, 12])
 
     plt.clf()
     days = [datetime.date.today() - datetime.timedelta(days=i) for i in range(7, 0, -1)]

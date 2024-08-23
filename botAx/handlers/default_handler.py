@@ -8,11 +8,11 @@ from botAx.classes.UsersChoice import UsersChoice
 router = Router()
 
 
-@router.message(F.text == 'Вернуться')
+@router.message(F.text == 'Вернуться🔙')
 async def back_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "Вы вернулись в начало! Выберите то что хотите сделать",
+        "Вы вернулись в начало! Выберите то, что хотите сделать📒",
         reply_markup=make_keyboard_row(available_start_choice))
     await state.set_state(UsersChoice.start_choosing)
 
@@ -20,5 +20,5 @@ async def back_handler(message: Message, state: FSMContext):
 @router.message(F.text)
 async def default_answer(message: Message):
     await message.answer(
-        "Что то пошло не так! Попробуй еще раз, если не получиться перезапусти бота /start",
+        "Что-то пошло не так!🚫 Попробуйте еще раз, если не получиться перезапустите бота /start",
         reply_markup=make_keyboard_row(available_start_choice))

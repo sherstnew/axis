@@ -15,7 +15,7 @@ router = Router()
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "Привет🤚, Выбери на клавиатуре, что ты хочешь сделать",
+        "Привет👋,\nВыберите на клавиатуре то, что вы хотите сделать📒",
         reply_markup=make_keyboard_row(available_start_choice))
     await state.set_state(UsersChoice.start_choosing)
 
@@ -25,18 +25,19 @@ async def choose_move(message: Message, state: FSMContext):
     await state.update_data(chosen_move=message.text.lower())
     if message.text.lower() == available_start_choice[0].lower():
         await message.answer(
-            text="Хорошо! Теперь выбери какую диаграмму хочешь получить по активностям за последнюю неделю",
+            text="Хорошо👍! Теперь выберите какую диаграмму хотите получить по виртуальным застройкам за последнюю"
+                 " неделю📊",
             reply_markup=row_keyboard_with_come_back(available_output_choice))
         await state.set_state(UsersChoice.output_choosing)
         return
     await state.set_state(UsersChoice.input_choosing)
     await message.answer(
-        text="Хорошо! Теперь выбери следующее",
+        text="Хорошо👍! Теперь выберите способ передать координаты🔃",
         reply_markup=input_keyboard())
 
 
-@router.message(UsersChoice.start_choosing, F.text != 'Вернуться')
+@router.message(UsersChoice.start_choosing, F.text != 'Вернуться🔙')
 async def choose_move_wrong(message: Message):
     await message.answer(
-        text="Неизвестное действие! Попробуй еще раз на клавиатуре",
+        text="Неизвестное действие! Попробуйте еще раз на клавиатуре🔄",
         reply_markup=row_keyboard_with_come_back(available_output_choice))

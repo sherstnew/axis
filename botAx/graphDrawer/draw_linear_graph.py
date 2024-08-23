@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import requests
+
 
 
 def draw_linear_graph():
-    # Запрос Ане
-    y = np.array([1, 2, 6, 0, 4, 3, 12])
+    response = requests.get('http://172.16.18.126:8000/using_of_week').json()
+
+    y = np.array([1, 2, 6, 9, 4, 3, 12])
 
     plt.clf()
     x = np.array([i for i in range(len(y))])

@@ -54,11 +54,13 @@
 .inputs_header {
   width: 100%;
   font-size: 24px;
+  padding: 10px;
 }
 
 .inputs_subheader {
   width: 100%;
   font-size: 20px;
+  padding: 10px;
 }
 
 .block {
@@ -104,4 +106,10 @@
   align-content: flex-start;
   flex-wrap: wrap;
   gap: 20px;
+}
+
+label {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
 }

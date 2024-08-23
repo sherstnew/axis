@@ -15,3 +15,17 @@ body {
 .ymaps-2-1-79-map ymaps:nth-child(1) {
   border-radius: 15px !important;
 }
+/* 
+.g-root_theme_dark {
+  background-image: linear-gradient(rgba(0, 0, 0, .9), rgba(0, 0, 0, .9)), url('../src/static/images/deer-dark.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.g-root_theme_light {
+  background-image: linear-gradient(rgba(255, 255, 255, .9), rgba(255, 255, 255, .9)), url('../src/static/images/deer-light.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+} */
